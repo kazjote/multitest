@@ -26,14 +26,13 @@ module Multitest
       load_rails_config
       prepare_databases
       @tests = Finder.new(Dir.open(File.join(@wd, test))).tests
-      
     end
-    
+
     def load_rails_config
       @config = 
         YAML::load(File.open(File.join(@wd, 'config', 'database.yml')))['test']
     end
-    
+
     def prepare_postgres
       srand
       number = rand(10**10)
@@ -52,7 +51,7 @@ module Multitest
         exit 1
       end
     end
-    
+
     def prepare_databases
       case @config["adapter"]
       when "postgresql"
@@ -61,6 +60,12 @@ module Multitest
         puts('Your database adapter is not supported!')
         exit 1
       end
+    end
+
+    def start
+      time = Time.now
+      time = [time.strftime("%d-%m-%y_%H-%M-%S"), time.usec >> 14].join("-")
+      Dir.mkdir(File.join(@wd, "multitest", "results", time))
     end
   end
 end

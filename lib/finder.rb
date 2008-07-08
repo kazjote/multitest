@@ -11,7 +11,7 @@ module Multitest
       cwd = Dir.getwd
       Dir.chdir(dir.path)
       dir.each do |entry|
-          search_dir_for_tests(Dir.open(entry)) if 
+          search_dir_for_tests(Dir.open(entry)) if
             File.stat(entry).directory? && !%w{. ..}.include?(entry)
       end
       Dir.chdir(cwd)
@@ -21,7 +21,7 @@ module Multitest
       dir.each  do |entry|
         unless %w{. ..}.include?(entry)
           file_stat = File.stat(File.join(dir.path, entry))
-          search_dir_for_tests(Dir.open(File.join(dir.path, entry))) if 
+          search_dir_for_tests(Dir.open(File.join(dir.path, entry))) if
             file_stat.directory?
           process_found_file(dir.path, entry) if file_stat.file? &&
             /\.rb$/ =~ entry
@@ -31,7 +31,7 @@ module Multitest
     
     def process_found_file(dir_path, entry)
       require File.join(dir_path, entry)
-      @tests << {:dir => dir_path, :file => entry, :tests => 
+      @tests << {:dir => dir_path, :file => entry, :tests =>
           entry.to(-4).camelize.constantize.instance_methods.reject {|m| not /^test_/ =~ m}}
     end
   end
