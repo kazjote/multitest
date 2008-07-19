@@ -8,6 +8,14 @@ $:.unshift File.join(File.dirname(__FILE__),'..','lib')
 require 'test/unit'
 require File.join(File.dirname(__FILE__),'..','lib','main')
 
+require 'rubygems'
+require 'mocha'
+
+(1..2).each do |i|
+  require File.join(File.dirname(__FILE__), 'rails_tree', "test", "functional", "test_func#{i}")
+  require File.join(File.dirname(__FILE__), 'rails_tree', "test", "unit", "unit_test#{i}")
+end
+
 class TestTester < Test::Unit::TestCase
   def test_load_rails_config
     t = Multitest::Tester.new(File.join(File.dirname(__FILE__), 'rails_tree'))
@@ -31,6 +39,18 @@ class TestTester < Test::Unit::TestCase
     assert Dir.entries(File.join(tree_path, "multitest")).include?("results")
     assert_equal old_size + 1, Dir.entries(results_path).entries.length
   end
+  
+  def test_execute_all_tests
+    tree_path, tester_path, results_path = paths
+    tester = run_tester
+    results = %w{test_func1 test_func2 unit_test1 unit_test2}.inject([]) do |array, file|
+      array << File.open(File.join(tester.instance_variable_get(:@results_path),
+          file), "r").readlines
+    end.flatten
+    %w{test_one test_two test_2}.each do |test_name|
+      assert !results.select {|l| Regexp.new(test_name) =~ l}.compact.empty?
+    end
+  end
 
   private
 
@@ -45,9 +65,9 @@ class TestTester < Test::Unit::TestCase
   def run_tester
     tree_path = paths[0]
     t = Multitest::Tester.new(tree_path)
-    t.load_rails_config
     t.db_count = 2
-    t.prepare_databases
+    t.run
     t.start
+    t
   end
 end

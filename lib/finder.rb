@@ -23,7 +23,7 @@ module Multitest
           file_stat = File.stat(File.join(dir.path, entry))
           search_dir_for_tests(Dir.open(File.join(dir.path, entry))) if
             file_stat.directory?
-          process_found_file(dir.path, entry) if file_stat.file? &&
+          process_found_file(File.expand_path(dir.path), entry) if file_stat.file? &&
             /\.rb$/ =~ entry
         end
       end
@@ -33,6 +33,12 @@ module Multitest
       require File.join(dir_path, entry)
       @tests << {:dir => dir_path, :file => entry, :tests =>
           entry.to(-4).camelize.constantize.instance_methods.reject {|m| not /^test_/ =~ m}}
+    end
+    
+    def self.find!(dir)
+      f = Finder.new
+      f.find_tests(dir)
+      f.tests
     end
   end
 end

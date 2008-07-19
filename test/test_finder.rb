@@ -23,7 +23,7 @@ class TestFinder < Test::Unit::TestCase
         'test_func1.rb' => 'functional',
         'test_func2.rb' => 'functional'}
     @finder.instance_variable_get(:@tests).each do |found|
-      expected.delete(found[:file]) if found[:dir] == expected[found[:file]]
+      expected.delete(found[:file]) if /#{expected[found[:file]]}/ =~ found[:dir]
     end
     assert_equal 0, expected.size
   end

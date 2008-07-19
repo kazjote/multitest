@@ -1,3 +1,5 @@
+require "test/unit"
+
 class UnitTest1 < Test::Unit::TestCase
 
   def not_a_test

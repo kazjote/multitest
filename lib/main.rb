@@ -25,7 +25,7 @@ module Multitest
       @db_count ||= 4
       load_rails_config
       prepare_databases
-      @tests = Finder.new(Dir.open(File.join(@wd, test))).tests
+      @tests = Finder.find!(Dir.open(File.join(@wd, "test")))
     end
 
     def load_rails_config
@@ -61,11 +61,25 @@ module Multitest
         exit 1
       end
     end
+    
+    def start_server
+      DRb.start_service "druby://:7777"
+    end
 
     def start
       time = Time.now
       time = [time.strftime("%d-%m-%y_%H-%M-%S"), time.usec >> 14].join("-")
-      Dir.mkdir(File.join(@wd, "multitest", "results", time))
+      @results_path = File.join(@wd, "multitest", "results", time)
+      @results_dir = Dir.mkdir(@results_path)
+      @tests.each do |test_file_hash|
+        results_file_path = File.join(@results_path, test_file_hash[:file].split(/\./)[0])
+        test_file = File.join(test_file_hash[:dir], test_file_hash[:file])
+        test_file_hash[:tests].each do |test_name|
+          `echo "---TEST:#{test_name}" >> #{results_file_path}`
+          `ruby -I.:lib:test #{test_file} -n "/^(#{test_name})$/" 2>&1 >> #{results_file_path}`
+          `echo ---RESULT:#{$?} >> #{results_file_path}`
+        end
+      end
     end
   end
 end
