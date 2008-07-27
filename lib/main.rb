@@ -5,7 +5,9 @@ require 'yaml'
 require 'rubygems'
 require 'ruby-debug'
 
-require 'finder'
+require File.join(File.dirname(__FILE__), 'finder')
+require File.join(File.dirname(__FILE__), 'support')
+require File.join(File.dirname(__FILE__), 'test_base')
 
 Debugger.start
 
@@ -63,14 +65,34 @@ module Multitest
     end
     
     def start_server
-      DRb.start_service "druby://:7777"
+      DRb.start_service "druby://:7777", TestBase.new(@tests, @results_path)
     end
-
-    def start
-      time = Time.now
-      time = [time.strftime("%d-%m-%y_%H-%M-%S"), time.usec >> 14].join("-")
-      @results_path = File.join(@wd, "multitest", "results", time)
-      @results_dir = Dir.mkdir(@results_path)
+    
+    def stop_server
+      DRb.stop_service
+    end
+    
+    def do_fork
+      start_server
+      @db_count.times do
+        unless fork
+          DRb.start_service
+          ro = DRbObject.new(nil, 'druby://:7777')
+          while test = ro.get_test
+            require File.join(test[:dir], test[:file])
+            test_class = test[:file].split(".").first.classify.constantize
+            result = Test::Unit::TestResult.new
+            test_class.new(test[:test]).run(result) {|s,n|}
+            ro.accept_result(test, result)
+          end
+          exit
+        end
+      end
+      Process.waitall
+      stop_server
+    end
+    
+    def run_all_tests
       @tests.each do |test_file_hash|
         results_file_path = File.join(@results_path, test_file_hash[:file].split(/\./)[0])
         test_file = File.join(test_file_hash[:dir], test_file_hash[:file])
@@ -80,6 +102,14 @@ module Multitest
           `echo ---RESULT:#{$?} >> #{results_file_path}`
         end
       end
+    end
+
+    def start
+      time = Time.now
+      time = [time.strftime("%d-%m-%y_%H-%M-%S"), time.usec >> 14].join("-")
+      @results_path = File.join(@wd, "multitest", "results", time)
+      @results_dir = Dir.mkdir(@results_path)
+      do_fork
     end
   end
 end

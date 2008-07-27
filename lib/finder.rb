@@ -1,5 +1,4 @@
-require 'rubygems'
-require 'active_support'
+require File.join(File.dirname(__FILE__), 'support')
 
 module Multitest
   class Finder

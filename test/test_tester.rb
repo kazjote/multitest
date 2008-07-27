@@ -17,6 +17,11 @@ require 'mocha'
 end
 
 class TestTester < Test::Unit::TestCase
+  
+  def teardown
+    DRb.stop_service
+  end
+  
   def test_load_rails_config
     t = Multitest::Tester.new(File.join(File.dirname(__FILE__), 'rails_tree'))
     t.load_rails_config
